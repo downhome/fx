@@ -126,9 +126,9 @@ module Fx
       # @return [void]
       def drop_function(name)
         if support_drop_function_without_args
-          execute "DROP FUNCTION #{name};"
+          execute "DROP FUNCTION #{schema}.#{name};"
         else
-          execute "DROP FUNCTION #{name}();"
+          execute "DROP FUNCTION #{schema}.#{name}();"
         end
       end
 
@@ -149,7 +149,10 @@ module Fx
 
       attr_reader :connectable
 
-      delegate :execute, to: :connection
+      def execute(command)
+        command.sub!(/(CREATE.*(?:OR REPLACE)? FUNCTION)\s+((?:\()?.*)/i, '\1 %s.\2' % schema)
+        connection.execute command
+      end
 
       def connection
         Connection.new(connectable.connection)
@@ -161,6 +164,11 @@ module Fx
 
         pg_connection = connectable.connection.raw_connection
         pg_connection.server_version >= 10_00_00
+      end
+
+      def schema
+        current_schema = Fx.configuration.current_schema
+        current_schema.respond_to?(:call) ? current_schema.call : current_schema
       end
     end
   end

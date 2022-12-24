@@ -14,6 +14,9 @@ RSpec.configure do |config|
     DatabaseCleaner.clean
   end
 
+  config.filter_run focus: true
+  config.run_all_when_everything_filtered = true
+
   unless defined?(silence_stream)
     require "active_support/testing/stream"
     config.include ActiveSupport::Testing::Stream

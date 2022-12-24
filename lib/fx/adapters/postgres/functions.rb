@@ -19,9 +19,9 @@ module Fx
               ON pd.objid = pp.oid AND pd.deptype = 'e'
           LEFT JOIN pg_aggregate pa
               ON pa.aggfnoid = pp.oid
-          WHERE pn.nspname = 'public' AND pd.objid IS NULL
+          WHERE pn.nspname = '%s' AND pd.objid IS NULL
               AND pa.aggfnoid IS NULL
-          ORDER BY pp.oid;
+          ORDER BY pp.oid
         EOS
 
         # Wraps #all as a static facade.
@@ -47,7 +47,11 @@ module Fx
         attr_reader :connection
 
         def functions_from_postgres
-          connection.execute(FUNCTIONS_WITH_DEFINITIONS_QUERY)
+          sql_statement = Fx.configuration.schemas.map do |schema|
+            FUNCTIONS_WITH_DEFINITIONS_QUERY % schema
+          end.join("\n UNION ALL\n")
+
+          connection.execute sql_statement
         end
 
         def to_fx_function(result)

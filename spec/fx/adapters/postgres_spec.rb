@@ -2,6 +2,10 @@ require "spec_helper"
 
 module Fx::Adapters
   describe Postgres, :db do
+    before :each do
+      Fx.configuration.current_schema = :public
+    end
+
     describe "#create_function" do
       it "successfully creates a function" do
         adapter = Postgres.new
@@ -17,6 +21,60 @@ module Fx::Adapters
         )
 
         expect(adapter.functions.map(&:name)).to include("test")
+      end
+
+      it "successfully creates or replace a function with schema" do
+        sql_command = <<-EOS
+            CREATE FUNCTION west.test()
+            RETURNS text AS $$
+            BEGIN
+                RETURN 'test';
+            END;
+            $$ LANGUAGE plpgsql;
+          EOS
+
+        Fx.configuration.current_schema = :west
+        adapter = Postgres.new
+
+        expect(adapter).to receive_message_chain(:connection, :execute).with(sql_command)
+
+        adapter.create_function(
+          <<-EOS
+            CREATE FUNCTION test()
+            RETURNS text AS $$
+            BEGIN
+                RETURN 'test';
+            END;
+            $$ LANGUAGE plpgsql;
+          EOS
+        )
+      end
+
+      it "successfully creates or replace a function with schema" do
+        sql_command = <<-EOS
+            CREATE OR REPLACE FUNCTION west.test()
+            RETURNS text AS $$
+            BEGIN
+                RETURN 'test';
+            END;
+            $$ LANGUAGE plpgsql;
+          EOS
+
+        Fx.configuration.current_schema = :west
+        adapter = Postgres.new
+
+        expect(adapter).to receive_message_chain(:connection, :execute).with(sql_command)
+
+        adapter.create_function(
+          <<-EOS
+            CREATE OR REPLACE FUNCTION test()
+            RETURNS text AS $$
+            BEGIN
+                RETURN 'test';
+            END;
+            $$ LANGUAGE plpgsql;
+          EOS
+        )
       end
     end
 

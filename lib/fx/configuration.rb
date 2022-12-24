@@ -40,9 +40,23 @@ module Fx
     # @return Boolean
     attr_accessor :dump_functions_at_beginning_of_schema
 
+    # Sets current schema to make all postgresql statements schema-aware
+    #
+    # Defaults to nil
+    # @return lambda, :symbol, :string
+    attr_accessor :current_schema
+
+    # Returns all schemas to consider when excuting any of the database functions
+    #
+    # Defaults to [:public]
+    # @return lambda, Array of schemas
+    attr_accessor :schemas
+
     def initialize
       @database = Fx::Adapters::Postgres.new
       @dump_functions_at_beginning_of_schema = false
+      @current_schema ||= :public
+      @schemas ||= [:public]
     end
   end
 end
